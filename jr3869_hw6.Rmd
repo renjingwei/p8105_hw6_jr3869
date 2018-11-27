@@ -13,6 +13,8 @@ library(modelr)
 library(leaps)
 ```
 
+###problem 1
+
 Create a city_state variable (e.g. “Baltimore, MD”), and a binary variable indicating whether the homicide is solved. Omit cities Dallas, TX; Phoenix, AZ; and Kansas City, MO – these don’t report victim race. Also omit Tulsa, AL – this is a data entry mistake. Modifiy victim_race to have categories white and non-white, with white as the reference category. Be sure that victim_age is numeric.
 
 
@@ -89,4 +91,55 @@ OR_summary %>%
 ```
 
 Based on the plot, the estimate odds ratio of solving homicides comparing non-white vitctims to white victims varies cross different states and cities. The estimates are mostly lower than one, which menas that homicides in which the victim is non-white are less likely to be resolved compared to those in which the victim is white. 
+
+### problem 2
+
+Load and clean the data for regression analysis (i.e. convert numeric to factor where appropriate, check for missing data, etc.).
+
+
+```{r}
+birthweight =  read_csv("./data/birthweight.csv")
+
+birth_tidy =
+  birthweight %>% 
+  janitor::clean_names() %>%
+  mutate(babysex = as.factor(recode(babysex, `1` = 0, `2` = 1)),
+         frace = as.factor(frace), 
+         mrace = as.factor(mrace),
+         malform = as.factor(malform), 
+         bhead = as.numeric(bhead),
+         bwt = bwt*0.0022)
+
+```
+
+babysex, frace, mrace, malfrom are changed to factor variables. brithweight are changed to pounds.
+
+
+Propose a regression model for birthweight. This model may be based on a hypothesized structure for the factors that underly birthweight, on a data-driven model-building process, or a combination of the two. Describe your modeling process and show a plot of model residuals against fitted values – use add_predictions and add_residuals in making this plot.
+
+
+```{r}
+birth_tidy %>% 
+  ggplot(aes(x = bwt)) + 
+  geom_bar()+
+  labs(x = "birthweight",
+       title = "distribution of birthweight variable") 
+
+```
+
+the birthweight is approximately normally distributed. 
+
+backward eliminiation method, regression model
+and non-significant variables are taken out one at a time
+```{r}
+mult.fit = lm(bwt ~ ., data = birth_tidy)
+step(mult.fit, direction='backward')
+```
+11 predictors are included in the model after backward selection
+
+```{r}
+
+fit_model = lm(bwt ~ babysex + bhead + blength + delwt + fincome + gaweeks + mheight + mrace + parity + ppwt + smoken, data = birth_tidy)
+summary(fit_model)
+```
 
