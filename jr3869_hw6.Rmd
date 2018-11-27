@@ -110,6 +110,8 @@ birth_tidy =
          bhead = as.numeric(bhead),
          bwt = bwt*0.0022)
 
+skimr::skim(birth_tidy) 
+
 ```
 
 babysex, frace, mrace, malfrom are changed to factor variables. brithweight are changed to pounds.
