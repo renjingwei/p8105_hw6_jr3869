@@ -2,7 +2,7 @@
 title: "Jr3869_hw9"
 author: "Jingwei Ren"
 date: "11/26/2018"
-output: html_document
+output: github_document
 ---
 
 ```{r setup, include=FALSE}
@@ -204,7 +204,8 @@ head(cv)
 cv %>% 
   dplyr::select(.id, starts_with("rmse")) %>% 
   gather(key = model, value = rmse, rmse_model:rmse_model2) %>% 
-  ggplot(aes(x = model, y = rmse)) + geom_violin()
+  ggplot(aes(x = model, y = rmse)) + 
+  geom_violin()
 
 ```
 
