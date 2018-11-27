@@ -17,12 +17,13 @@ Create a city_state variable (e.g. “Baltimore, MD”), and a binary variable i
 
 
 ```{r}
-homicide= read_csv('./data/homicide-data.csv') 
-homicide = homicide %>%  
-  mutate(city_state = str_c(city, ",", state),
-         case_status = ifelse(disposition == "Closed by arrest", 1, 0)) %>% 
-  filter(!(city_state %in% c('Dallas,TX', 'Phoenix,AZ','Kansas City,MO',"Tulsa,AL"))) %>%
-  mutate(victim_race = ifelse(victim_race == "White", "White", "Nonwhite"), victim_race = factor(victim_race, levels = c("White", "Nonwhite")),
+homicide= read_csv("./data/homicide-data.csv") 
+
+homicide_tidy= homicide %>% 
+  mutate(city_state = str_c(city, state, sep = ", "),
+         homi_status = as.numeric(disposition == "Closed by arrest")) %>% 
+  filter(!city_state %in% c("Dallas, TX","Phoenix, AZ", "Kansas City, MO", "Tulsa, AL")) %>%
+  mutate(victim_race = fct_relevel(ifelse(victim_race == "White", "white", "non-white"), "white"),
 victim_age = as.numeric(victim_age))
 ```
 
@@ -31,6 +32,50 @@ For the city of Baltimore, MD, use the glm function to fit a logistic regression
 
 
 ```{r}
+baltimore = homicide_tidy %>% 
+  filter(city_state == "Baltimore, MD")
 
+logistic = 
+  baltimore %>% 
+  stats::glm(homi_status ~ victim_age + victim_sex + victim_race, data = ., family = binomial())
+
+logistic %>% 
+  broom::tidy() %>%  # give log odds ratio
+  mutate(OR = exp(estimate), # transform back
+         conf.low = exp(estimate - std.error*1.96),
+         conf.high = exp(estimate + std.error*1.96)) %>%
+  select(term, log_OR = estimate, OR, conf.low, conf.high) %>% 
+  filter(term == "victim_raceNonwhite") %>%
+  knitr::kable(digits = 3)
+
+```
+The result of logistic model showed that the estimate of the adjusted odds ratio is 0.441, with confidence interval from (0.31, 0.62)
+
+
+Now run glm for each of the cities in your dataset, and extract the adjusted odds ratio (and CI) for solving homicides comparing non-white victims to white victims. Do this within a “tidy” pipeline, making use of purrr::map, list columns, and unnest as necessary to create a dataframe with estimated ORs and CIs for each city.
+
+
+```{r}
+each_city = homicide_tidy %>% 
+  group_by(city_state) %>% 
+  nest() 
+
+each_city %>%
+   mutate(models = map(data, ~stats::glm(homi_status ~ victim_age + victim_sex + victim_race, data = .x, family = binomial())),
+  models = map(models, broom::tidy)) %>% 
+   select(-data) %>% 
+   unnest() %>% 
+   mutate(estimate = exp(estimate),
+          conf.low = exp(estimate - std.error*qnorm(0.975)),
+         conf.high = exp(estimate + std.error*qnorm(0.975))) %>%  
+  filter(term =="victim_racenon-white") %>%
+  select(city_state,estimate, conf.low, conf.high) %>%
+knitr::kable(digits = 3)
+```
+Create a plot that shows the estimated ORs and CIs for each city. Organize cities according to estimated OR, and comment on the plot.
+
+
+
+```{r}
 
 ```
